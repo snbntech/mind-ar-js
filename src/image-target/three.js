@@ -57,7 +57,14 @@ class MindARThree {
     const group = new THREE.Group();
     group.visible = false;
     group.matrixAutoUpdate = false;
-    const anchor = {group, targetIndex, onTargetFound: null, onTargetLost: null, css: false, visible: false};
+    const anchor = {
+      group, 
+      targetIndex, 
+      onTargetFound: null,
+      onTargetLost: null, 
+      css: false, 
+      visible: false
+    };
     this.anchors.push(anchor);
     this.scene.add(group);
     return anchor;
@@ -67,7 +74,14 @@ class MindARThree {
     const group = new THREE.Group();
     group.visible = false;
     group.matrixAutoUpdate = false;
-    const anchor = {group, targetIndex, onTargetFound: null, onTargetLost: null, css: true, visible: false};
+    const anchor = {
+      group, 
+      targetIndex, 
+      onTargetFound: null, 
+      onTargetLost: null, 
+      css: true, 
+      visible: false
+    };
     this.anchors.push(anchor);
     this.cssScene.add(group);
     return anchor;
@@ -87,23 +101,23 @@ class MindARThree {
       this.container.appendChild(this.video);
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-	this.ui.showCompatibility();
-	reject();
-	return;
+        this.ui.showCompatibility();
+        reject();
+        return;
       }
 
       navigator.mediaDevices.getUserMedia({audio: false, video: {
-	facingMode: 'environment',
+        facingMode: 'environment',
       }}).then((stream) => {
-	this.video.addEventListener( 'loadedmetadata', () => {
-	  this.video.setAttribute('width', this.video.videoWidth);
-	  this.video.setAttribute('height', this.video.videoHeight);
-	  resolve();
-	});
-	this.video.srcObject = stream;
+        this.video.addEventListener( 'loadedmetadata', () => {
+          this.video.setAttribute('width', this.video.videoWidth);
+          this.video.setAttribute('height', this.video.videoHeight);
+          resolve();
+        });
+        this.video.srcObject = stream;
       }).catch((err) => {
-	console.log("getUserMedia error", err);
-	reject();
+        console.log("getUserMedia error", err);
+        reject();
       });
     });
   }
@@ -114,78 +128,82 @@ class MindARThree {
       const container = this.container;
 
       this.controller = new Controller({
-	inputWidth: video.videoWidth,
-	inputHeight: video.videoHeight,
-	filterMinCF: this.filterMinCF,
-	filterBeta: this.filterBeta,
-	warmupTolerance: this.warmupTolerance,
-	missTolerance: this.missTolerance,
-	maxTrack: this.maxTrack, 
-	onUpdate: (data) => {
-	  if (data.type === 'updateMatrix') {
-	    const {targetIndex, worldMatrix} = data;
+        inputWidth: video.videoWidth,
+        inputHeight: video.videoHeight,
+        filterMinCF: this.filterMinCF,
+        filterBeta: this.filterBeta,
+        warmupTolerance: this.warmupTolerance,
+        missTolerance: this.missTolerance,
+        maxTrack: this.maxTrack, 
+        onUpdate: (data) => {
+          if (data.type === 'updateMatrix') {
+            const {targetIndex, worldMatrix} = data;
 
-	    for (let i = 0; i < this.anchors.length; i++) {
-	      if (this.anchors[i].targetIndex === targetIndex) {
-		if (this.anchors[i].css) {
-		  this.anchors[i].group.children.forEach((obj) => {
-		    obj.element.style.visibility = worldMatrix === null? "hidden": "visible";
-		  });
-		} else {
-		  this.anchors[i].group.visible = worldMatrix !== null;
-		}
+            for (let i = 0; i < this.anchors.length; i++) {
+              if (this.anchors[i].targetIndex === targetIndex) {
+                if (this.anchors[i].css) {
+                  this.anchors[i].group.children.forEach((obj) => {
+                    obj.element.style.visibility = worldMatrix === null? "hidden": "visible";
+                  });
+                } else {
+                  this.anchors[i].group.visible = worldMatrix !== null;
+                }
 
-		if (worldMatrix !== null) {
-		  let m = new THREE.Matrix4();
-		  m.elements = [...worldMatrix];
-		  m.multiply(this.postMatrixs[targetIndex]);
-		  if (this.anchors[i].css) {
-		    m.multiply(cssScaleDownMatrix);
-		  }
-		  this.anchors[i].group.matrix = m;
-		}
+                let m = new THREE.Matrix4();
+                if (worldMatrix !== null) {
+                  m.elements = [...worldMatrix];
+                  m.multiply(this.postMatrixs[targetIndex]);
+                  if (this.anchors[i].css) {
+                    m.multiply(cssScaleDownMatrix);
+                  }
+                  this.anchors[i].group.matrix = m;
+                }
+                
+                if (this.anchors[i].visible && worldMatrix === null) {
+                  this.anchors[i].visible = false;
+                  if (this.anchors[i].onTargetLost) {
+                    this.anchors[i].onTargetLost(m);
+                  }
+                }
 
-		if (this.anchors[i].visible && worldMatrix === null) {
-		  this.anchors[i].visible = false;
-		  if (this.anchors[i].onTargetLost) {
-		    this.anchors[i].onTargetLost();
-		  }
-		}
+                if (!this.anchors[i].visible && worldMatrix !== null) {
+                  this.anchors[i].visible = true;
+                  if (this.anchors[i].onTargetFound) {
+                    this.anchors[i].onTargetFound(m);
+                  }
+                }
 
-		if (!this.anchors[i].visible && worldMatrix !== null) {
-		  this.anchors[i].visible = true;
-		  if (this.anchors[i].onTargetFound) {
-		    this.anchors[i].onTargetFound();
-		  }
-		}
-
-		if (worldMatrix !== null) {
-		  this.ui.hideScanning();
-		}
-	      }
-	    }
-	  }
-	}
+                if (worldMatrix !== null) {
+                  this.ui.hideScanning();
+                }
+                if (worldMatrix === null) {
+                  this.ui.showScanning();
+                }
+              }
+            }
+          }
+        }
       });
 
       this.resize();
 
+      // Setting the image targets (i.e. *.mind)
       const {dimensions: imageTargetDimensions} = await this.controller.addImageTargets(this.imageTargetSrc);
 
       this.postMatrixs = [];
       for (let i = 0; i < imageTargetDimensions.length; i++) { 
-	const position = new THREE.Vector3();
-	const quaternion = new THREE.Quaternion();
-	const scale = new THREE.Vector3();
-	const [markerWidth, markerHeight] = imageTargetDimensions[i];
-	position.x = markerWidth / 2;
-	position.y = markerWidth / 2 + (markerHeight - markerWidth) / 2;
-	scale.x = markerWidth;
-	scale.y = markerWidth;
-	scale.z = markerWidth;
-	const postMatrix = new THREE.Matrix4();
-	postMatrix.compose(position, quaternion, scale);
-	this.postMatrixs.push(postMatrix);
+        const position = new THREE.Vector3();
+        const quaternion = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        const [markerWidth, markerHeight] = imageTargetDimensions[i];
+        position.x = markerWidth / 2;
+        position.y = markerWidth / 2 + (markerHeight - markerWidth) / 2;
+        scale.x = markerWidth;
+        scale.y = markerWidth;
+        scale.z = markerWidth;
+        const postMatrix = new THREE.Matrix4();
+        postMatrix.compose(position, quaternion, scale);
+        this.postMatrixs.push(postMatrix);
       }
 
       await this.controller.dummyRun(this.video);
