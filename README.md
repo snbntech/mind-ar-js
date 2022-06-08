@@ -1,5 +1,23 @@
 # MindAR
 
+
+## SNBN Setup
+
+ - Stay at the root
+ - yarn install
+ - yarn run watch
+ - run python webserver (python -m http.server)
+ - ngrok http 8000
+ - http://ngrok.io/examples/image-tracking/three.html
+
+
+
+
+
+
+
+
+
 <img src="https://hiukim.github.io/mind-ar-js-doc/assets/images/multi-targets-demo-8b5fc868f6b0847a9818e8bf0ba2c1c3.gif" height="250"><img src="https://hiukim.github.io/mind-ar-js-doc/assets/images/interactive-demo-1ab348a381cbd808f4d52c8750524d11.gif" height="250"><img src="https://hiukim.github.io/mind-ar-js-doc/assets/images/face-tryon-demo-369c4ba701f1df2099ecf05c27f0c944.gif" height="250">
 
 
