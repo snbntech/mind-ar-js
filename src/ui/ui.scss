@@ -3,6 +3,7 @@ $primary-color: white;
 
 .mindar-ui-overlay {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: absolute;
@@ -49,6 +50,12 @@ $primary-color: white;
 }
 
 .mindar-ui-scanning {
+  .instructions{
+    padding: 10vh 1.5vh 0vh 1.5vh;
+    color: #c0c0c0;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    text-align: center;
+  }
   .scanning {
     @media (min-aspect-ratio: "1/1") {
       width: 50vh;
